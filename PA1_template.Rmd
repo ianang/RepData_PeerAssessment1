@@ -22,7 +22,7 @@ activity_summary <- summarize(activity_grouped, total_steps=sum(steps))
 ```
 
 ```{r 2.Make a histogram of the total number of steps taken each day}
-hist(activity_summary$total_steps)
+hist(activity_summary$total_steps, 20)
 ```
 
 ```{r 3.Calculate and report the mean and median of the total number of steps taken per day}
@@ -45,6 +45,32 @@ activity_spreaded$interval[which.max(activity_spreaded$average)]
 
 ## Imputing missing values
 
+```{r 1.Calculate and report the total number of missing values in the dataset}
+sum(is.na(activity$steps))
+```
 
+*Our strategy for filling in all of the missing values is to use mean for that 5-minute interval across all days.*
+
+```{r 3.Create a new dataset with the missing data filled in}
+for (i in 1:nrow(activity_spreaded)) {
+  for (j in 2:(ncol(activity_spreaded)-1)) {
+   if(is.na(activity_spreaded[i,j])) {activity_spreaded[i,j] <- activity_spreaded$average[i]} 
+  }
+}
+```
+
+```{r 4.Make a histogram and calculate and report mean and median total number of steps taken per day}
+steps_summed <- apply(activity_spreaded, 2, sum)
+total_steps  <- data.frame(steps_summed)[-c(1,nrow(data.frame(steps_summed))),]
+hist(total_steps, 20)
+
+#mean of total steps per day#
+mean(total_steps)
+
+#median of total steps per day#
+median(total_steps)
+```
+
+*Compared to the first part of the assignment, the mean is still the same but the median has changed (to be equal to the mean). The impact of imputing missing data (using mean per 5-minute interval) does not significantly distort the estimates of the total daily number of steps. However, it does distort the shape of the histogram as we can see the first part's histogram and this new histogram look significantly different, especially with regards to the height of the central spike.*
 
 ## Are there differences in activity patterns between weekdays and weekends?

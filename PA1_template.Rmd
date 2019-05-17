@@ -32,7 +32,16 @@ median(activity_summary$total_steps)
 
 ## What is the average daily activity pattern?
 
+```{r 1.Make a plot of 5-min interval and number of steps taken, averaged across all days, message=FALSE}
+library(tidyr)
+activity_spreaded         <- spread(activity, date, steps)
+activity_spreaded$average <- rowMeans(activity_spreaded[,-1], na.rm=TRUE)
+with(activity_spreaded, plot(interval, average, type="l"))
+```
 
+```{r 2.Which 5-min interval (on average across all the days) contains the maximum number of steps?}
+activity_spreaded$interval[which.max(activity_spreaded$average)]
+```
 
 ## Imputing missing values
 

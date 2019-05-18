@@ -39,7 +39,7 @@ activity_spreaded$average <- rowMeans(activity_spreaded[,-1], na.rm=TRUE)
 with(activity_spreaded, plot(interval, average, type="l"))
 ```
 
-```{r 2.Which 5-min interval (on average across all the days) contains the maximum number of steps?}
+```{r 2.Find the 5-min interval (on average across all the days) with maximum number of steps}
 activity_spreaded$interval[which.max(activity_spreaded$average)]
 ```
 
@@ -52,15 +52,16 @@ sum(is.na(activity$steps))
 *Our strategy for filling in all of the missing values is to use mean for that 5-minute interval across all days.*
 
 ```{r 3.Create a new dataset with the missing data filled in}
+activity_imputed <- activity_spreaded
 for (i in 1:nrow(activity_spreaded)) {
   for (j in 2:(ncol(activity_spreaded)-1)) {
-   if(is.na(activity_spreaded[i,j])) {activity_spreaded[i,j] <- activity_spreaded$average[i]} 
+   if(is.na(activity_spreaded[i,j])) {activity_imputed[i,j] <- activity_spreaded$average[i]} 
   }
 }
 ```
 
 ```{r 4.Make a histogram and calculate and report mean and median total number of steps taken per day}
-steps_summed <- apply(activity_spreaded, 2, sum)
+steps_summed <- apply(activity_imputed, 2, sum)
 total_steps  <- data.frame(steps_summed)[-c(1,nrow(data.frame(steps_summed))),]
 hist(total_steps, 20)
 
@@ -74,3 +75,24 @@ median(total_steps)
 *Compared to the first part of the assignment, the mean is still the same but the median has changed (to be equal to the mean). The impact of imputing missing data (using mean per 5-minute interval) does not significantly distort the estimates of the total daily number of steps. However, it does distort the shape of the histogram as we can see the first part's histogram and this new histogram look significantly different, especially with regards to the height of the central spike.*
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r 1.Create a new factor variable with two levels “weekday” and “weekend”, message=FALSE}
+library(tidyr)
+activity_gathered          <- gather(activity_imputed, "2012-10-01":"2012-11-30", key="date", value="steps")
+activity_gathered$average  <- NULL
+activity_gathered$date     <- as.Date(activity_gathered$date, "%Y-%m-%d")
+w_ends                     <- c("Saturday", "Sunday")
+activity_gathered$weekends <- weekdays(activity_gathered$date) %in% w_ends
+activity_wday              <- activity_gathered[activity_gathered$weekends==FALSE,]
+activity_wend              <- activity_gathered[activity_gathered$weekends==TRUE,]
+
+par(mfrow=c(2,1), mar=c(5,4,2,2))
+
+activity_wday_spreaded         <- spread(activity_wday, date, steps)
+activity_wday_spreaded$average <- rowMeans(activity_wday_spreaded[,-1])
+with(activity_wday_spreaded, plot(interval, average, type="l"))
+
+activity_wend_spreaded         <- spread(activity_wend, date, steps)
+activity_wend_spreaded$average <- rowMeans(activity_wend_spreaded[,-1])
+with(activity_wend_spreaded, plot(interval, average, type="l"))
+```

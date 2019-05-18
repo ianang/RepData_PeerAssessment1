@@ -7,18 +7,18 @@ output:
 
 ## Loading and preprocessing the data
 
-```{r}
+```{r, message=FALSE}
 unzip("./activity.zip")
 activity <- read.csv("./activity.csv")
+library(dplyr)
 ```
 
 ## What is mean total number of steps taken per day?
 
-```{r 1.Calculate the total number of steps taken per day, message=FALSE}
-library(dplyr)
+```{r 1.Calculate the total number of steps taken per day}
 activity_filtered <- filter(activity, !is.na(steps))
-activity_grouped <- group_by(activity_filtered, date)
-activity_summary <- summarize(activity_grouped, total_steps=sum(steps))
+activity_grouped  <- group_by(activity_filtered, date)
+activity_summary  <- summarize(activity_grouped, total_steps=sum(steps))
 ```
 
 ```{r 2.Make a histogram of the total number of steps taken each day}
@@ -32,15 +32,15 @@ median(activity_summary$total_steps)
 
 ## What is the average daily activity pattern?
 
-```{r 1.Make a plot of 5-min interval and number of steps taken, averaged across all days, message=FALSE}
-library(tidyr)
-activity_spreaded         <- spread(activity, date, steps)
-activity_spreaded$average <- rowMeans(activity_spreaded[,-1], na.rm=TRUE)
-with(activity_spreaded, plot(interval, average, type="l"))
+```{r 1.Make a plot of 5-min interval and number of steps taken, averaged across all days}
+activity_filtered <- filter(activity, !is.na(steps))
+activity_grouped  <- group_by(activity_filtered, interval)
+activity_summary  <- summarize(activity_grouped, average_steps=mean(steps))
+with(activity_summary, plot(interval, average_steps, type="l"))
 ```
 
 ```{r 2.Find the 5-min interval (on average across all the days) with maximum number of steps}
-activity_spreaded$interval[which.max(activity_spreaded$average)]
+activity_summary$interval[which.max(activity_summary$average_steps)]
 ```
 
 ## Imputing missing values
@@ -52,24 +52,21 @@ sum(is.na(activity$steps))
 *Our strategy for filling in all of the missing values is to use mean for that 5-minute interval across all days.*
 
 ```{r 3.Create a new dataset with the missing data filled in}
-activity_imputed <- activity_spreaded
-for (i in 1:nrow(activity_spreaded)) {
-  for (j in 2:(ncol(activity_spreaded)-1)) {
-   if(is.na(activity_spreaded[i,j])) {activity_imputed[i,j] <- activity_spreaded$average[i]} 
+activity_imputed <- activity
+for (i in 1:nrow(activity_imputed)) {
+  if(is.na(activity_imputed$steps[i])) {
+    imputing <- activity_summary$average_steps[activity_summary$interval==activity_imputed$interval[i]]
+    activity_imputed$steps[i] <- imputing
   }
 }
 ```
 
-```{r 4.Make a histogram and calculate and report mean and median total number of steps taken per day}
-steps_summed <- apply(activity_imputed, 2, sum)
-total_steps  <- data.frame(steps_summed)[-c(1,nrow(data.frame(steps_summed))),]
-hist(total_steps, 20)
-
-#mean of total steps per day#
-mean(total_steps)
-
-#median of total steps per day#
-median(total_steps)
+```{r 4.Make a histogram and report mean and median total number of steps taken per day}
+activity_grouped <- group_by(activity_imputed, date)
+activity_summary <- summarize(activity_grouped, total_steps=sum(steps))
+hist(activity_summary$total_steps, 20)
+mean(activity_summary$total_steps)
+median(activity_summary$total_steps)
 ```
 
 *Compared to the first part of the assignment, the mean is still the same but the median has changed (to be equal to the mean). The impact of imputing missing data (using mean per 5-minute interval) does not significantly distort the estimates of the total daily number of steps. However, it does distort the shape of the histogram as we can see the first part's histogram and this new histogram look significantly different, especially with regards to the height of the central spike.*
@@ -77,22 +74,18 @@ median(total_steps)
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ```{r 1.Create a new factor variable with two levels “weekday” and “weekend”, message=FALSE}
-library(tidyr)
-activity_gathered          <- gather(activity_imputed, "2012-10-01":"2012-11-30", key="date", value="steps")
-activity_gathered$average  <- NULL
-activity_gathered$date     <- as.Date(activity_gathered$date, "%Y-%m-%d")
-w_ends                     <- c("Saturday", "Sunday")
-activity_gathered$weekends <- weekdays(activity_gathered$date) %in% w_ends
-activity_wday              <- activity_gathered[activity_gathered$weekends==FALSE,]
-activity_wend              <- activity_gathered[activity_gathered$weekends==TRUE,]
+activity_imputed$date <- as.Date(activity_imputed$date, "%Y-%m-%d")
+weekends              <- c("Saturday", "Sunday")
+activity_imputed$day_type[weekdays(activity_imputed$date) %in% weekends == FALSE] <- "weekday"
+activity_imputed$day_type[weekdays(activity_imputed$date) %in% weekends == TRUE]  <- "weekend"
 
 par(mfrow=c(2,1), mar=c(5,4,2,2))
 
-activity_wday_spreaded         <- spread(activity_wday, date, steps)
-activity_wday_spreaded$average <- rowMeans(activity_wday_spreaded[,-1])
-with(activity_wday_spreaded, plot(interval, average, type="l"))
+activity_wd_grouped <- group_by(activity_imputed[activity_imputed$day_type=="weekday",], interval)
+activity_wd_summary <- summarize(activity_wd_grouped, average_steps=mean(steps))
+with(activity_wd_summary, plot(interval, average_steps, type="l"))
 
-activity_wend_spreaded         <- spread(activity_wend, date, steps)
-activity_wend_spreaded$average <- rowMeans(activity_wend_spreaded[,-1])
-with(activity_wend_spreaded, plot(interval, average, type="l"))
+activity_we_grouped <- group_by(activity_imputed[activity_imputed$day_type=="weekend",], interval)
+activity_we_summary <- summarize(activity_we_grouped, average_steps=mean(steps))
+with(activity_we_summary, plot(interval, average_steps, type="l"))
 ```

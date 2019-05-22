@@ -16,43 +16,43 @@ library(lattice)
 
 ## What is mean total number of steps taken per day?
 
-```{r 1.Calculate the total number of steps taken per day}
+```{r Calculate the total number of steps taken per day}
 activity_filtered <- filter(activity, !is.na(steps))
 activity_grouped  <- group_by(activity_filtered, date)
 activity_summary  <- summarize(activity_grouped, total_steps=sum(steps))
 ```
 
-```{r 2.Make a histogram of the total number of steps taken each day}
+```{r HISTOGRAM_OF_TOTAL_STEPS_EACH_DAY}
 hist(activity_summary$total_steps, 20)
 ```
 
-```{r 3.Calculate and report the mean and median of the total number of steps taken per day}
+```{r Calculate and report the mean and median of the total number of steps taken per day}
 mean(activity_summary$total_steps)
 median(activity_summary$total_steps)
 ```
 
 ## What is the average daily activity pattern?
 
-```{r 1.Make a plot of 5-min interval and number of steps taken, averaged across all days}
+```{r STEPS_PER_INTERVAL_AVERAGED_ACROSS_ALL_DAYS}
 activity_filtered <- filter(activity, !is.na(steps))
 activity_grouped  <- group_by(activity_filtered, interval)
 activity_summary  <- summarize(activity_grouped, average_steps=mean(steps))
 with(activity_summary, plot(interval, average_steps, type="l"))
 ```
 
-```{r 2.Find the 5-min interval (on average across all the days) with maximum number of steps}
+```{r Find the 5-min interval (on average across all the days) with maximum number of steps}
 activity_summary$interval[which.max(activity_summary$average_steps)]
 ```
 
 ## Imputing missing values
 
-```{r 1.Calculate and report the total number of missing values in the dataset}
+```{r Calculate and report the total number of missing values in the dataset}
 sum(is.na(activity$steps))
 ```
 
 *Our strategy for filling in all of the missing values is to use mean for that 5-minute interval across all days.*
 
-```{r 3.Create a new dataset with the missing data filled in}
+```{r Create a new dataset with the missing data filled in}
 activity_imputed <- activity
 for (i in 1:nrow(activity_imputed)) {
   if(is.na(activity_imputed$steps[i])) {
@@ -62,7 +62,7 @@ for (i in 1:nrow(activity_imputed)) {
 }
 ```
 
-```{r 4.Make a histogram and report mean and median total number of steps taken per day}
+```{r HISTOGRAM_OF_TOTAL_STEPS_EACH_DAY_WITH_IMPUTING}
 activity_grouped <- group_by(activity_imputed, date)
 activity_summary <- summarize(activity_grouped, total_steps=sum(steps))
 hist(activity_summary$total_steps, 20)
@@ -74,12 +74,15 @@ median(activity_summary$total_steps)
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-```{r 1.Create a new factor variable with two levels weekdays and weekends}
+```{r Create a new factor variable with two levels weekdays and weekends}
 activity_imputed$date <- as.Date(activity_imputed$date, "%Y-%m-%d")
 weekends              <- c("Saturday", "Sunday")
 activity_imputed$day_type[weekdays(activity_imputed$date) %in% weekends == FALSE] <- 0
 activity_imputed$day_type[weekdays(activity_imputed$date) %in% weekends == TRUE]  <- 1
 activity_imputed$day_type <- factor(activity_imputed$day_type, labels=c("weekday","weekend"))
+```
+
+```{r PANEL_PLOT}
 activity_grouped <- group_by(activity_imputed, day_type, interval)
 activity_summary <- summarize(activity_grouped, average_steps=mean(steps))
 with(activity_summary, xyplot(average_steps~interval|day_type, layout=c(1,2), type="l"))

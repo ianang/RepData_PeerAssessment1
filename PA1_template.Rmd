@@ -85,4 +85,4 @@ activity_summary <- summarize(activity_grouped, average_steps=mean(steps))
 with(activity_summary, xyplot(average_steps~interval|day_type, layout=c(1,2), type="l"))
 ```
 
-*It is quite clear that activity levels are more evenly spreaded across the day during weekends, while activity levels spiked only during mornings on weekdays.*
+*It appears that activity levels are more evenly spreaded across the day during weekends, while activity levels spiked only during mornings on weekdays.*
